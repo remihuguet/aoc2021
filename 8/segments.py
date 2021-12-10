@@ -1,3 +1,6 @@
+from itertools import permutations
+
+
 def read_input(input_file):
     with open(input_file, "r") as f:
         return [i for i in f.readlines()]
@@ -32,39 +35,45 @@ numbers_repr = {
 }
 
 
+digits = [
+    "abcefg",
+    "cf",
+    "acdeg",
+    "acdfg",
+    "bcdf",
+    "abdfg",
+    "abdefg",
+    "acf",
+    "abcdefg",
+    "abcdfg",
+]
+
+
 def decode_wiring(input: str):
-    patterns, output = parse_segment(input)
-    wiring = {
-        "a": None,
-        "b": None,
-        "c": None,
-        "d": None,
-        "e": None,
-        "f": None,
-        "g": None,
-    }
-    one = list(filter(lambda x: len(x) == 2, patterns))[0]
-    wiring["c"] = one[0]
-    wiring["f"] = one[1]
+    patterns, _ = parse_segment(input)
 
-    seven = list(filter(lambda x: len(x) == 3, patterns))[0]
-    wiring["a"] = seven[0]
+    for permutation in permutations("abcdefg"):
+        if all(decode(pattern, permutation) in digits for pattern in patterns):
+            break
+    return "".join(permutation)
 
-    eight = list(filter(lambda x: len(x) == 7, patterns))[0]
 
-    lensix = list(filter(lambda x: len(x) == 6, patterns))
-    lenfive = list(filter(lambda x: len(x) == 5, patterns))
+def decode(pattern: str, permutation: tuple):
+    perm = "".join(permutation)
+    decoded = []
+    for p in pattern:
+        decoded.append(chr(perm.index(p) + ord("a")))
+    decoded.sort()
+    return "".join(decoded)
 
-    setlensix = [
-        set(el) - set([wiring["a"], wiring["c"], wiring["f"]]) for el in lensix
-    ]
-    setlenfive = [
-        set(el) - set([wiring["a"], wiring["c"], wiring["f"]]) for el in lenfive
-    ]
 
-    setsix = list(filter(lambda x: len(x) == 4, setlensix))
-    setthree = list(filter(lambda x: len(x) == 2, setlenfive))
-    six = lensix[setlensix.index(setsix[0])]
-    three = lenfive[setlenfive.index(setthree[0])]
-    print(setlenfive)
-    print(six, three)
+def decode_output(input: str):
+    wiring = decode_wiring(input)
+    _, outputs = parse_segment(input)
+    return [digits.index(decode(output, wiring)) for output in outputs]
+
+
+def compute_score(input_file: str):
+    lines = read_input(input_file)
+    scores = [int("".join(map(str, decode_output(line)))) for line in lines]
+    return sum(int(s) for s in scores)
